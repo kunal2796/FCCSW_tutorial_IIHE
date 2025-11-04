@@ -293,7 +293,20 @@ df = df.Filter("Z_invM_ee_kt >= 71.2 && Z_invM_ee_kt<=111.2")
 This cut should appear as the final step before we return the dataframe.
 
 
+### Exercise 5:
+Let's try peforming inference on our jets. This step make take a bit longer (~10 mins). 
+Try the by-now familiar command
+```
+fccanalysis run analysis_2.py
+```
+Your output .root file should contain both the MC truth flavours as well as the jet tagging scores for each node.
 
+Can you choose a flavour of jet (e.g. `s`) and build a binary classifier by computing `s_i / (s_i + s_j)` for each background flavour `j`?
+
+Think of a nice way of testing your classifier. [ROC curves](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_curve.html) are a classic.
+
+
+*After performing the inference you should have a simple analysis.py file from which you can experiment. The actual performance evaluation is purely optional.*
 
 
 
