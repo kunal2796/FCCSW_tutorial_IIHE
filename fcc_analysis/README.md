@@ -100,7 +100,7 @@ Having seen the basic elements of an `analysis.py` file, it is worth trying to r
 ```
 fccanalysis run analysis_0.py
 ```
-Did everything run correctly? Inspect the `outputs/p8_ee_Zqq_ecm91.root` file and make sure the branches contain what you expect.
+*Did everything run correctly? Inspect the `outputs/p8_ee_Zqq_ecm91.root` file and make sure the branches contain what you expect.*
 
 
 
@@ -143,19 +143,128 @@ Try re-running the code using
 ```
 fccanalysis run analysis_0.py
 ```
-Did everything run correctly? Are you able to see the jet variables in the tree?
+*Did everything run correctly? Are you able to see the jet variables in the tree?*
 
 ### Exercise 2:
 
 Try to also implement the additional jet algorithms in your code:
 1. Anti-kT with the following parameters: (0.5, 0, 0, 1, 0)
 2. ee-genkT with the following parameters: (0.5, 0, 0, 1, 0, 1)
-In both cases you should save kinematic variables for each jet.
+In both cases you should save kinematic variables for each jet. You will find the source code [here](https://github.com/HEP-FCC/FCCAnalyses/blob/master/addons/FastJet/src/JetClustering.cc), where you can find the correct function.
 
-Using your favourite method (e.g. uproot, PyROOT, native ROOT), read the relevant branches from the output .root file and compute the invariant mass of the Z boson by adding the 4-momenta of the jets in each event. What do you see? Which jet clustering method seems to perform best?
+Using your favourite method (e.g. uproot, PyROOT, native ROOT), read the relevant branches from the output .root file and compute the invariant mass of the Z boson by adding the 4-momenta of the jets in each event. 
+*What do you see? Which jet clustering method seems to perform best?*
+
+
+### Exercise 3:
+
+It can be convenient to compute simple quantities such as the invariant mass within FCCAnalyses itself. Defining a dedicated function can be somewhat overkill (though we will see how later). For now try to compute the invariant mass using the `Define` function of the dataframe. The syntax is the following
+```
+df = df.Define("Z_invM_ee_kt",          "int result; for (size_t i=0; i<10; ++i){result += i;} return result;")
+```
+Hints:
+ - You can freely call other previously defined columns in the dataframe
+ - `pseudo_jets` can be added using the `+` operator
+ - The invariant mass of a `pseudo_jet` can be computed using `.m()`
+
+***Note: At this point you should feel free to copy over the `analysis_1.py` file from the `src` directory of this repo to your `tutorial` folder if you have struggled with any of the previous exercises but still wish to follow along.***
 
 
 
+## Adding functions to FCCAnalyses
+
+In this section we will extend our `analysis.py` file to include a `functions.h` file where we will define functions to be compiled at runtime. Let's begin by adding the following line to our configuration block
+```
+# additional/custom C++ functions, defined in header files (optional)
+includePaths = ["functions.h"]
+```
+
+Next let's actually define our `functions.h` file. For simplicity you will find the `functions.h` file in the `src` directory with some helpful boilerplate. Copy it over to your `tutorial` directory.
+The file already contains the a function called `get_Z_flavour` that we will use to compute the flavour of the quarks each Z boson decayed to. Some parts of the function are missing. 
+
+
+### Exercise 4:
+
+Can you fill in the missing parts of `get_Z_flavour`?
+
+
+
+Now that we have fixed `get_Z_flavour` we can call in from our `analysers` function. Include the following line (and don't forget to add the flavour to the `branchList`
+```
+# Computing the MC flavour of each jet
+df = df.Define("Z_flavour_MC",          "FCCAnalyses::AddFunctions::get_Z_flavour(jet_ee_kt.size(), Particle)")
+```
+
+Test the added function by running 
+```
+fccanalysis run analysis_1.py
+```
+*Did everything run correctly? Are the MC flavours of each jet defined?*
+
+## Jet flavour tagging
+
+In this part of the tutorial we will see how to perform inference on our jets within FCCAnalyses. Before proceeding, it is worth noting that FCCAnalyes provides a wrapper for the jet clustering steps that implements the ee-kt algorithm, which was found to be the most appropriate for FCC-ee studies.
+
+Start by including the following line in the configuration block of your `analysis.py` file
+```
+# Jet clustering wrapper
+jetClusteringHelper = None
+```
+
+Next, within the `analysers` function we call the jet clustering helper 
+```
+## perform N=2 jet clustering using wrapper
+global jetClusteringHelper
+jetClusteringHelper = ExclusiveJetClusteringHelper(
+    "ReconstructedParticles", 2
+)
+df = jetClusteringHelper.define(df)
+```
+Note that the arguments are a string describing the particle collection we wish to cluster, as well as the number of jets per event.
+
+The jet clustering helper provides the following syntax for printing kinematic variables of jets
+```
+##  outputs jet properties
+branchList += jetClusteringHelper.outputBranches()
+```
+which should appear within `output()`.
+
+
+
+***Note: At this point you should copy over the `analysis_2.py` file from the `src` directory of this repo to your `tutorial` folder. The jet flavour inference contains considerable boilerplate that has been included in `analysis_2.py`***
+
+
+The jet flavour helper within FCCAnalyses requires an `.onnx` model file to be provided. These are often centrally provided and are specified in the configuration block of the `analysis.py` file
+```
+## latest particle transformer model, trained on 9M jets in winter2023 samples
+model_name = "fccee_flavtagging_edm4hep_wc_v1"
+...
+## model files locally stored on /eos
+model_dir = (
+    "/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
+)
+local_preproc = "{}/{}.json".format(model_dir, model_name)
+local_model = "{}/{}.onnx".format(model_dir, model_name)
+```
+
+As the neural network input consists of several distinct particle classes, a dictionary mapping the various classes to their counterparts in the EDM4hep file must be provided
+```
+# Here we start the tagging stuff
+collections = {
+    "GenParticles": "Particle",
+    "PFParticles": "ReconstructedParticles",
+    "PFTracks": "EFlowTrack",
+    "PFPhotons": "EFlowPhoton",
+    "PFNeutralHadrons": "EFlowNeutralHadron",
+    "TrackState": "EFlowTrack_1",
+    "TrackerHits": "TrackerHits",
+    "CalorimeterHits": "CalorimeterHits",
+    "dNdx": "EFlowTrack_2",
+    "PathLength": "EFlowTrack_L",
+    "Bz": "magFieldBz",
+}
+```
+and should appear in the `analysers` function.
 
 
 
