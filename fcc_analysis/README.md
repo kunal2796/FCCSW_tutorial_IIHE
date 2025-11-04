@@ -189,7 +189,7 @@ Can you fill in the missing parts of `get_Z_flavour`?
 
 
 
-Now that we have fixed `get_Z_flavour` we can call in from our `analysers` function. Include the following line (and don't forget to add the flavour to the `branchList`
+Now that we have fixed `get_Z_flavour` we can call in from our `analysers` function. Include the following line (and don't forget to add the flavour to the `branchList`)
 ```
 # Computing the MC flavour of each jet
 df = df.Define("Z_flavour_MC",          "FCCAnalyses::AddFunctions::get_Z_flavour(jet_ee_kt.size(), Particle)")
@@ -264,8 +264,33 @@ collections = {
     "Bz": "magFieldBz",
 }
 ```
-and should appear in the `analysers` function.
 
+
+Until now the mentioned code was included in the `analysis_2.py` file. In order to actually perform the inference a similar syntax to the jet clustering helper is used. Please include the following code in your `analysers` function following the definition of `collections`
+```
+global jetFlavourHelper
+jetFlavourHelper = JetFlavourHelper(
+    collections,
+    jetClusteringHelper.jets,
+    jetClusteringHelper.constituents,
+)
+
+## define observables for tagger
+df = jetFlavourHelper.define(df)
+```
+
+As before, the jet flavour helper provides a built-in function to access the output branches that should be appended to the `branchList`
+```
+## outputs jet scores and constituent breakdown
+branchList += jetFlavourHelper.outputBranches()
+```
+
+At this point we are ready to perform inference on our jets. However, we may not be interested in atypical events that differ too much from the expected Z resonance. Let's implement the follow cut to exclude events with a jet invariant mass that is not consistent with the Z boson
+```
+# Should add a filtering of events according to Z invariant mass +-20 GeV
+df = df.Filter("Z_invM_ee_kt >= 71.2 && Z_invM_ee_kt<=111.2")
+```
+This cut should appear as the final step before we return the dataframe.
 
 
 
