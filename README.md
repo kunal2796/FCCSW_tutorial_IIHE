@@ -14,3 +14,4 @@
     - fork and clone
 - List of centrally-generated event samples, reconstructed with the fast simulation of the IDEA detector concept can be found [here](https://fcc-physics-events.web.cern.ch/fcc-ee/rec/winter2023/IDEA).
 - Any queries can be posted on the [FCCSW forum](https://fccsw-forum.web.cern.ch/c/fccanalysis/9) or the [FCCSW Mattermost channel](https://mattermost.web.cern.ch/fccsw).
+- [Discussion on jet clustering algorithms](https://indico.cern.ch/event/1173562/contributions/4929025/attachments/2470068/4237859/2022-06-FCC-jets.pdf) by Gavin Salam.
