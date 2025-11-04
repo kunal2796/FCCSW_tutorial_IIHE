@@ -277,6 +277,9 @@ jetFlavourHelper = JetFlavourHelper(
 
 ## define observables for tagger
 df = jetFlavourHelper.define(df)
+
+## tagger inference
+df = jetFlavourHelper.inference(weaver_preproc, weaver_model, df)
 ```
 
 As before, the jet flavour helper provides a built-in function to access the output branches that should be appended to the `branchList`
