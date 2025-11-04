@@ -8,7 +8,7 @@ In this part of the tutorial we will use FCCAnalyses to read EDM4hep files and p
 Let's start by building FCCAnalyses. 
 
 ```
-git clone --branch pre-edm4hep1 https://github.com/HEP-FCC/FCCAnalyses.git
+git clone https://github.com/HEP-FCC/FCCAnalyses.git
 cd FCCAnalyses
 source ./setup.sh
 mkdir build install && cd build
