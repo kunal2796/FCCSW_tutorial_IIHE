@@ -30,50 +30,6 @@ inputDir    = "./localSamples/"
 
 
 
-
-# additional/custom C++ functions, defined in header files (optional)
-includePaths = ["functions.h"]
-
-# Jet clustering wrapper
-jetClusteringHelper = None
-
-
-
-## latest particle transformer model, trained on 9M jets in winter2023 samples
-model_name = "fccee_flavtagging_edm4hep_wc_v1"
-
-## model files needed for unit testing in CI
-url_model_dir = "https://fccsw.web.cern.ch/fccsw/testsamples/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
-url_preproc = "{}/{}.json".format(url_model_dir, model_name)
-url_model = "{}/{}.onnx".format(url_model_dir, model_name)
-
-## model files locally stored on /eos
-model_dir = (
-    "/eos/experiment/fcc/ee/jet_flavour_tagging/winter2023/wc_pt_13_01_2022/"
-)
-local_preproc = "{}/{}.json".format(model_dir, model_name)
-local_model = "{}/{}.onnx".format(model_dir, model_name)
-
-## get local file, else download from url
-def get_file_path(url, filename):
-    if os.path.exists(filename):
-        return os.path.abspath(filename)
-    else:
-        urllib.request.urlretrieve(url, os.path.basename(url))
-        return os.path.basename(url)
-
-
-weaver_preproc = get_file_path(url_preproc, local_preproc)
-weaver_model = get_file_path(url_model, local_model)
-
-from addons.ONNXRuntime.jetFlavourHelper import JetFlavourHelper
-from addons.FastJet.jetClusteringHelper import (
-    ExclusiveJetClusteringHelper,
-)
-
-jetFlavourHelper = None
-
-
 #Mandatory: RDFanalysis class where the use defines the operations on the TTree
 class RDFanalysis:
 
@@ -141,40 +97,6 @@ class RDFanalysis:
 
 
 
-        # Computing the MC flavour of each jet
-        df = df.Define("Z_flavour_MC",          "FCCAnalyses::AddFunctions::get_Z_flavour(jet_ee_kt.size(), Particle)")
-
-
-        ## perform N=2 jet clustering using wrapper
-        global jetClusteringHelper
-        jetClusteringHelper = ExclusiveJetClusteringHelper(
-            "ReconstructedParticles", 2
-        )
-
-        df = jetClusteringHelper.define(df)
-
-        # Here we start the tagging stuff
-        collections = {
-            "GenParticles": "Particle",
-            "PFParticles": "ReconstructedParticles",
-            "PFTracks": "EFlowTrack",
-            "PFPhotons": "EFlowPhoton",
-            "PFNeutralHadrons": "EFlowNeutralHadron",
-            "TrackState": "EFlowTrack_1",
-            "TrackerHits": "TrackerHits",
-            "CalorimeterHits": "CalorimeterHits",
-            "dNdx": "EFlowTrack_2",
-            "PathLength": "EFlowTrack_L",
-            "Bz": "magFieldBz",
-        }
-
-
-
-
-        # Should add a filtering of events according to Z invariant mass +-20 GeV
-        df = df.Filter("Z_invM_ee_kt >= 71.2 && Z_invM_ee_kt<=111.2")
-
-        
         return df
 
     #__________________________________________________________
@@ -209,12 +131,6 @@ class RDFanalysis:
             # To be added in some exercise
             "Z_invM_ee_kt",
 
-            # Flavour
-            "Z_flavour_MC",
-
                 ]
-
-        ##  outputs jet properties
-        branchList += jetClusteringHelper.outputBranches()
 
         return branchList

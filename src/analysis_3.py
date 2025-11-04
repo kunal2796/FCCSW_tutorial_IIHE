@@ -194,6 +194,12 @@ class RDFanalysis:
     def output():
         branchList = [
 
+            "RP_px",
+            "RP_py",
+            "RP_pz",
+            "RP_e",
+            "RP_charge",
+
             # EE-KT
             "jet_ee_kt_px",
             "jet_ee_kt_py",
